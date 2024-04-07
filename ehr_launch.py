@@ -214,7 +214,14 @@ def _get_coverage_data(tokens):
         try:
             coverage = coverage.json()
         except json.JSONDecodeError:
-            raise ValueError(f"""Coverage data not returned in JSON format. You probably haven't set the correct scope permissions, or registered the app with the EHR vendor so that it has access to this resource in Read or Search mode.""")
+            raise ValueError(
+                f"""
+                Coverage data not returned in JSON format.  
+                You probably haven't set the correct scope permissions,  
+                or registered the app with the EHR vendor  
+                so that it has access to this resource in Read or Search mode.
+                """
+                )
 
         # Sometimes a resource is returned, but it doesn't have anything useful
         if coverage["resourceType"] == "OperationOutcome":
