@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Who has paid, or is paying, for this patient?</title>
+    <style>
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      html {
+        font-family: Arial;
+        background: #F2FAF8;
+        padding: 1rem;
+        height: 100%;
+      }
+      th, td {
+        text-align: left;
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+      }
+      th {
+        background-color: #4CAF50;
+        color: white;
+      }
+      tr:hover {background-color: #f5f5f5;}
+      .circle {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+        }
+      
+      h1 {
+        font-family: Arial;
+        font-weight: 400;
+        color: #FF4E00;
+        margin: 1rem 0;
+      }
+      h2 {
+        font-family: Arial;
+        font-weight: 400;
+        color: #01ADAB;
+        margin: 1rem 0;
+      }
+      #body{
+        font-family: Arial;
+        color: #000000;
+        margin: 1rem 0;
+        font-weight: 300;
+        font-size: 15px;
+        height: 100%;
+      }
+      #mainCtr{
+        vertical-align: top;
+      }
+      #body{
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="mainCtr">
+    <div id="headerCtr">
+      <h1>
+        Who has paid, or is paying, for this patient?
+      </h1>
+    </div>
+    <div id="bodyCtr">
+      <table>
+        {% for key, value in data.items() %}
+        <tr>
+          <td>{{ key }}</td>
+            <td>
+              {{ value }}
+            </td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    <!-- Add an iframe with the source set to your app's URL -->
+    <!-- iframe src="{{ app_url }}" width="100%" height="500"></iframe-->
+  </div>
+  </body>
+</html>
