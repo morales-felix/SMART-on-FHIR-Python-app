@@ -1,12 +1,10 @@
 import os
 import json
 import uuid
-import re
 import logging
 import requests
 from flask import Flask, request, render_template, redirect
 from oauthlib.oauth2 import WebApplicationClient
-import pandas as pd
 
 
 ####################################################################################################
