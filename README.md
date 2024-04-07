@@ -31,7 +31,7 @@ Before launching this application in the SMART Health IT sandbox, do the followi
     - Client ID: `client-id`
     - Allowed Scopes: `patient/Patient.rs patient/Coverage.rs launch offline_access openid fhirUser`
     - Allowed Redirect URIs: `http://localhost:4201/fhir-app/`
-    - App's Launch URL: `http://localhost:4201/`
+    - App's Launch URL: `http://localhost:4201/`  
     You can also find these parameters in the `ehr_launch.py` file. The parameters set in the `ehr_launch.py` file and in the sandbox MUST match, otherwise the application will not work.  
 
 3. Go to the "App Launch Options" tab in the SMART Health IT sandbox and select:
