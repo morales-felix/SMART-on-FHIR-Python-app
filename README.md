@@ -1,4 +1,4 @@
-# SMART on FHIR SDOH App
+# SMART on FHIR Coverage App
 
 ## Introduction
 
