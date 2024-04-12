@@ -1,4 +1,4 @@
-# SMART on FHIR Coverage App
+# SMART on FHIR Python/Flask App
 
 ## Introduction
 
