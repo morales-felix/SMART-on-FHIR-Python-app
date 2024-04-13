@@ -13,7 +13,7 @@ CLIENT_ID = "client-id"
 BASE_URL = "https://launch.smarthealthit.org/v/r4/fhir"
 # https://hl7.org/fhir/smart-app-launch/scopes-and-launch-context.html
 # For EHR launch, the scope should be "launch", not "launch/patient"
-SCOPES = "patient/Patient.rs patient/Coverage.rs launch offline_access openid fhirUser"
+SCOPES = "patient/Patient.rs patient/Observation.rs launch offline_access openid fhirUser"
 REDIRECT_URI = "http://localhost:4201/fhir-app/"
 
 
@@ -138,12 +138,14 @@ def render_data():
     records = {}
     
     first_name, last_name, dob = _get_patient_data(cookie["token"])
-    insurer_list = _get_coverage_data(cookie["token"])
+    height = _get_height(cookie["token"])
+    systolic_bp, diastolic_bp = _get_bp(cookie["token"])
     
     records["Name"] = first_name + " " + last_name
     records["Date of Birth"] = dob
-    for i, insurer in enumerate(insurer_list, 1):
-        records[f"Insurer {i}"] = insurer
+    records["Height"] = height
+    records["Systolic BP"] = systolic_bp
+    records["Diastolic BP"] = diastolic_bp
     
     return render_template("render_data.html", data=records)
 
@@ -199,24 +201,24 @@ def _get_patient_data(tokens):
     return given_name, family_name, birth_date
 
 
-def _get_coverage_data(tokens):
+def _get_height(tokens):
 
     # Getting data in the way prescribed by OAuthLib package
     uri, headers, body = client.add_token(
-        f"{BASE_URL}/coverage?patient={tokens['patient']}",
+        f"{BASE_URL}/Observation?patient={tokens['patient']}&category=vital-signs&code=8302-2",
         headers={"Accept": "application/fhir+json"}
     )
 
     try:
         # Getting data in the way prescribed by OAuthLib package
-        coverage = requests.get(uri, headers=headers, data=body)
+        observation = requests.get(uri, headers=headers, data=body)
         
         try:
-            coverage = coverage.json()
+            observation = observation.json()
         except json.JSONDecodeError:
             raise ValueError(
                 f"""
-                Coverage data not returned in JSON format.  
+                Observation data not returned in JSON format.  
                 You probably haven't set the correct scope permissions,  
                 or registered the app with the EHR vendor  
                 so that it has access to this resource in Read or Search mode.
@@ -224,45 +226,80 @@ def _get_coverage_data(tokens):
                 )
 
         # Sometimes a resource is returned, but it doesn't have anything useful
-        if coverage["resourceType"] == "OperationOutcome":
-            # print(f"\n{patient}\n")
-            raise ValueError(
-                f"""
-                The patient you selected (FHIR ID: {tokens['patient']})
-                does not have coverage data available
-                """
-            )
-            
-        coverage_list = []
-
-        if coverage["resourceType"] == "Bundle" and coverage["total"] > 1:
-            i = 1
-            for entry in coverage["entry"]:
-                try:
-                    coverage_list.append(entry["resource"]["payor"][0]["display"])
-                except KeyError:
-                    if i == 1:
-                        coverage_list = ["Unknown coverage"]
-                    else:
-                        coverage_list.append("Unknown coverage")
-        
-        elif coverage["resourceType"] == "Bundle" and coverage["total"] == 1:
-            try:
-                coverage_list.append(coverage["entry"][0]["resource"]["payor"][0]["display"])
-            except KeyError:
-                coverage_list.append("No coverage data available")
-                    
-                
-        elif coverage["resourceType"] == "Bundle" and coverage["total"] == 0:
-            coverage_list.append("No coverage data available")
-        
+        if observation["resourceType"] == "OperationOutcome":
+            height = "No height data available due to OperationOutcome error"
         else:
-            raise ValueError("Coverage data not returned in expected format")
+            if observation["resourceType"] == "Bundle" and observation["total"] > 0:
+                entry = observation["entry"][0]
+                try:
+                    value = entry["resource"]["valueQuantity"]["value"]
+                    unit = entry["resource"]["valueQuantity"]["unit"]
+                    height = str(round(value, 1)) + " " + unit
+                except KeyError:
+                    height = "No valid height data available. Either there isn't a value or a unit."
+            
+            else:
+                height = "No height data available due to empty bundle"
 
     except Exception as error:
-        raise ValueError(f"Found the following error pulling Coverage FHIR resource: {error}") from error
+        raise ValueError(f"Found the following error pulling Observation FHIR resource: {error}") from error
 
-    return coverage_list
+    return height
+
+
+def _get_bp(tokens):
+
+    # Getting data in the way prescribed by OAuthLib package
+    uri, headers, body = client.add_token(
+        f"{BASE_URL}/Observation?patient={tokens['patient']}&category=vital-signs&code=55284-4",
+        headers={"Accept": "application/fhir+json"}
+    )
+
+    try:
+        # Getting data in the way prescribed by OAuthLib package
+        blood_pressure = requests.get(uri, headers=headers, data=body)
+        
+        try:
+            blood_pressure = blood_pressure.json()
+        except json.JSONDecodeError:
+            raise ValueError(
+                f"""
+                Observation data not returned in JSON format.  
+                You probably haven't set the correct scope permissions,  
+                or registered the app with the EHR vendor  
+                so that it has access to this resource in Read or Search mode.
+                """
+                )
+
+        # Sometimes a resource is returned, but it doesn't have anything useful
+        if blood_pressure["resourceType"] == "OperationOutcome":
+            sys_bp = "No systolic blood pressure available due to OperationOutcome error"
+            dias_bp = "No diastolic blood pressure available due to OperationOutcome error"
+        else:
+            if blood_pressure["resourceType"] == "Bundle" and blood_pressure["total"] > 0:
+                entry = blood_pressure["entry"][0]
+                try:
+                    sys_value = entry["resource"]["component"][0]["valueQuantity"]["value"]
+                    sys_unit = entry["resource"]["component"][0]["valueQuantity"]["unit"]
+                    sys_bp = str(round(sys_value, 1)) + " " + sys_unit
+                except KeyError:
+                    sys_bp = "No valid systolic blood pressure available. Either there wasn't a value or a unit."
+                    
+                try:
+                    dias_value = entry["resource"]["component"][1]["valueQuantity"]["value"]
+                    dias_unit = entry["resource"]["component"][1]["valueQuantity"]["unit"]
+                    dias_bp = str(round(dias_value, 1)) + " " + dias_unit
+                except KeyError:
+                    dias_bp = "No valid diastolic blood pressure available. Either there wasn't a value or a unit."
+            
+            else:
+                sys_bp = "No systolic blood pressure available due to empty bundle"
+                dias_bp = "No diastolic blood pressure available due to empty bundle"
+
+    except Exception as error:
+        raise ValueError(f"Found the following error pulling Observation FHIR resource: {error}") from error
+
+    return sys_bp, dias_bp
 
 
 if __name__ == "__main__":
