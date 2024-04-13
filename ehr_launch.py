@@ -140,14 +140,19 @@ def render_data():
     first_name, last_name, dob = _get_patient_data(cookie["token"])
     height = _get_height(cookie["token"])
     systolic_bp, diastolic_bp = _get_bp(cookie["token"])
+    hdl = _get_hdl(cookie["token"])
+    ldl = _get_ldl(cookie["token"])
     
     records["Name"] = first_name + " " + last_name
     records["Date of Birth"] = dob
     records["Height"] = height
     records["Systolic BP"] = systolic_bp
     records["Diastolic BP"] = diastolic_bp
+    records["HDL"] = hdl
+    records["LDL"] = ldl
     
     return render_template("render_data.html", data=records)
+
 
 
 def _get_patient_data(tokens):
@@ -160,7 +165,7 @@ def _get_patient_data(tokens):
 
     try:
         # Getting data in the way prescribed by OAuthLib package
-        patient = requests.get(uri, headers=headers, data=body).json()
+        patient = requests.get(uri, headers=headers, data=body, timeout=10).json()
 
         # Sometimes a resource is returned, but it doesn't have anything useful
         if patient["resourceType"] == "OperationOutcome":
@@ -211,19 +216,19 @@ def _get_height(tokens):
 
     try:
         # Getting data in the way prescribed by OAuthLib package
-        observation = requests.get(uri, headers=headers, data=body)
+        observation = requests.get(uri, headers=headers, data=body, timeout=10)
         
         try:
             observation = observation.json()
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as error:
             raise ValueError(
-                f"""
+                """
                 Observation data not returned in JSON format.  
                 You probably haven't set the correct scope permissions,  
                 or registered the app with the EHR vendor  
                 so that it has access to this resource in Read or Search mode.
                 """
-                )
+                ) from error
 
         # Sometimes a resource is returned, but it doesn't have anything useful
         if observation["resourceType"] == "OperationOutcome":
@@ -257,19 +262,19 @@ def _get_bp(tokens):
 
     try:
         # Getting data in the way prescribed by OAuthLib package
-        blood_pressure = requests.get(uri, headers=headers, data=body)
+        blood_pressure = requests.get(uri, headers=headers, data=body, timeout=10)
         
         try:
             blood_pressure = blood_pressure.json()
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as error:
             raise ValueError(
-                f"""
+                """
                 Observation data not returned in JSON format.  
                 You probably haven't set the correct scope permissions,  
                 or registered the app with the EHR vendor  
                 so that it has access to this resource in Read or Search mode.
                 """
-                )
+                ) from error
 
         # Sometimes a resource is returned, but it doesn't have anything useful
         if blood_pressure["resourceType"] == "OperationOutcome":
@@ -300,6 +305,99 @@ def _get_bp(tokens):
         raise ValueError(f"Found the following error pulling Observation FHIR resource: {error}") from error
 
     return sys_bp, dias_bp
+
+
+def _get_hdl(tokens):
+
+    # Getting data in the way prescribed by OAuthLib package
+    uri, headers, body = client.add_token(
+        f"{BASE_URL}/Observation?patient={tokens['patient']}&category=laboratory&code=2085-9",
+        headers={"Accept": "application/fhir+json"}
+    )
+
+    try:
+        # Getting data in the way prescribed by OAuthLib package
+        hdl = requests.get(uri, headers=headers, data=body, timeout=10)
+        
+        try:
+            hdl = hdl.json()
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                """
+                Observation data not returned in JSON format.  
+                You probably haven't set the correct scope permissions,  
+                or registered the app with the EHR vendor  
+                so that it has access to this resource in Read or Search mode.
+                """
+                ) from error
+
+        # Sometimes a resource is returned, but it doesn't have anything useful
+        if hdl["resourceType"] == "OperationOutcome":
+            good_chol = "No HDL available due to OperationOutcome error"
+        else:
+            if hdl["resourceType"] == "Bundle" and hdl["total"] > 0:
+                entry = hdl["entry"][0]
+                try:
+                    value = entry["resource"]["valueQuantity"]["value"]
+                    unit = entry["resource"]["valueQuantity"]["unit"]
+                    good_chol = str(round(value, 1)) + " " + unit
+                except KeyError:
+                    good_chol = "No HDL available. Either there wasn't a value or a unit."
+            
+            else:
+                good_chol = "No HDL available due to empty bundle"
+
+    except Exception as error:
+        raise ValueError(f"Found the following error pulling Observation FHIR resource: {error}") from error
+
+    return good_chol
+
+
+def _get_ldl(tokens):
+
+    # Getting data in the way prescribed by OAuthLib package
+    uri, headers, body = client.add_token(
+        f"{BASE_URL}/Observation?patient={tokens['patient']}&category=laboratory&code=18262-6",
+        headers={"Accept": "application/fhir+json"}
+    )
+
+    try:
+        # Getting data in the way prescribed by OAuthLib package
+        ldl = requests.get(uri, headers=headers, data=body, timeout=10)
+        
+        try:
+            ldl = ldl.json()
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                """
+                Observation data not returned in JSON format.  
+                You probably haven't set the correct scope permissions,  
+                or registered the app with the EHR vendor  
+                so that it has access to this resource in Read or Search mode.
+                """
+                ) from error
+
+        # Sometimes a resource is returned, but it doesn't have anything useful
+        if ldl["resourceType"] == "OperationOutcome":
+            bad_chol = "No LDL available due to OperationOutcome error"
+        else:
+            print(ldl)
+            if ldl["resourceType"] == "Bundle" and ldl["total"] > 0:
+                entry = ldl["entry"][0]
+                try:
+                    value = entry["resource"]["valueQuantity"]["value"]
+                    unit = entry["resource"]["valueQuantity"]["unit"]
+                    bad_chol = str(round(value, 1)) + " " + unit
+                except KeyError:
+                    bad_chol = "No LDL available. Either there wasn't a value or a unit."
+            
+            else:
+                bad_chol = "No LDL available due to empty bundle"
+
+    except Exception as error:
+        raise ValueError(f"Found the following error pulling Observation FHIR resource: {error}") from error
+
+    return bad_chol
 
 
 if __name__ == "__main__":
