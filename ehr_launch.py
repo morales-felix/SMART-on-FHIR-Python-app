@@ -2,8 +2,8 @@ import os
 import json
 import uuid
 import logging
-import requests
 import concurrent.futures
+import requests
 from flask import Flask, request, render_template, redirect
 from oauthlib.oauth2 import WebApplicationClient
 
