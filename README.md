@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This project is a Python application developed to display Coverage information. It is functionally the same as the app showcased in this tutorial: <https://engineering.cerner.com/smart-on-fhir-tutorial/>. However, it is built in Python using the Flask framework, and it is hosted locally. It uses OAuthLib to handle OAuth2.0/SMART on FHIR authentication with the EMR's FHIR server.
+This project is a Python application developed to display Patient and Observation resources. It is functionally the same as the app showcased in this tutorial: <https://engineering.cerner.com/smart-on-fhir-tutorial/>. However, it is built in Python using the Flask framework, and it is hosted locally. It uses OAuthLib to handle OAuth2.0/SMART on FHIR authentication with the EMR's FHIR server.
 
 It is designed to be launched on SMART Health IT's sandbox (<https://launch.smarthealthit.org/>) with a Provider EHR Launch. To be able to launch this app on Cerner or Epic sandboxes, you would need to register this application with either of them to obtain a client ID, a base URL, and a list of allowed scopes, and then set up those parameters accordingly in the `ehr_launch.py` file.
 
@@ -29,7 +29,7 @@ Before launching this application in the SMART Health IT sandbox, do the followi
 
     - Client Identity Validation: Strict
     - Client ID: `client-id`
-    - Allowed Scopes: `patient/Patient.rs patient/Coverage.rs launch offline_access openid fhirUser`
+    - Allowed Scopes: `patient/Patient.rs patient/Observation.rs launch offline_access openid fhirUser`
     - Allowed Redirect URIs: `http://localhost:4201/fhir-app/`
     - App's Launch URL: `http://localhost:4201/`  
     You can also find these parameters in the `ehr_launch.py` file. The parameters set in the `ehr_launch.py` file and in the sandbox MUST match, otherwise the application will not work.  
