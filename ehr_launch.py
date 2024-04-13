@@ -3,6 +3,7 @@ import json
 import uuid
 import logging
 import requests
+import concurrent.futures
 from flask import Flask, request, render_template, redirect
 from oauthlib.oauth2 import WebApplicationClient
 
@@ -13,7 +14,9 @@ CLIENT_ID = "client-id"
 BASE_URL = "https://launch.smarthealthit.org/v/r4/fhir"
 # https://hl7.org/fhir/smart-app-launch/scopes-and-launch-context.html
 # For EHR launch, the scope should be "launch", not "launch/patient"
-SCOPES = "patient/Patient.rs patient/Observation.rs launch offline_access openid fhirUser"
+SCOPES = (
+    "patient/Patient.rs patient/Observation.rs launch offline_access openid fhirUser"
+)
 REDIRECT_URI = "http://localhost:4201/fhir-app/"
 
 
@@ -39,7 +42,9 @@ def index():
     launch_token = request.args.get("launch", "")
     iss = request.args.get("iss", "")
 
-    assert (iss == BASE_URL), f"""ISS link is {iss}, but the app's registered link is {BASE_URL}
+    assert (
+        iss == BASE_URL
+    ), f"""ISS link is {iss}, but the app's registered link is {BASE_URL}
     (these should match, otherwise there might be a security vulnerability). Please validate."""
 
     cookie["launch_token"] = launch_token
@@ -51,7 +56,9 @@ def index():
 # https://hl7.org/fhir/smart-app-launch/app-launch.html#retrieve-well-knownsmart-configuration
 # https://fhir.epic.com/Documentation?docId=oauth2&section=Embedded-Oauth2-Launch_Conformance-Statement
 smart_config_url = f"{BASE_URL}/.well-known/smart-configuration"
-response = requests.get(smart_config_url, headers={"Accept": "application/fhir+json"}).json()
+response = requests.get(
+    smart_config_url, headers={"Accept": "application/fhir+json"}
+).json()
 authorization_uri = response["authorization_endpoint"]
 token_uri = response["token_endpoint"]
 
@@ -79,7 +86,7 @@ def authorization():
         launch=cookie["launch_token"],  # Necessary for EHR launch
         scope=SCOPES,
         state=cookie["state"],
-        aud=BASE_URL,   # This is a key difference between OAuth 2.0 and SMART on FHIR
+        aud=BASE_URL,  # This is a key difference between OAuth 2.0 and SMART on FHIR
     )
 
     # Hit the auth server with built-in parameters
@@ -106,7 +113,7 @@ def callback():
             authorization_response=request.url,
             redirect_url=REDIRECT_URI,
             state=cookie["state"],
-            include_client_id=True, # This is another SMART-specific aspect, in case of a public client
+            include_client_id=True,  # This is another SMART-specific aspect, in case of a public client
         )
 
         # Send post request to token endpoint
@@ -135,24 +142,43 @@ def render_data():
     This method will render the data obtained from FHIR.
     """
 
-    records = {}
-    
-    first_name, last_name, dob = _get_patient_data(cookie["token"])
-    height = _get_height(cookie["token"])
-    systolic_bp, diastolic_bp = _get_bp(cookie["token"])
-    hdl = _get_hdl(cookie["token"])
-    ldl = _get_ldl(cookie["token"])
-    
-    records["Name"] = first_name + " " + last_name
-    records["Date of Birth"] = dob
-    records["Height"] = height
-    records["Systolic BP"] = systolic_bp
-    records["Diastolic BP"] = diastolic_bp
-    records["HDL"] = hdl
-    records["LDL"] = ldl
-    
-    return render_template("render_data.html", data=records)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Submit API calls as tasks to the executor
+        future_patient = executor.submit(_get_patient_data, cookie["token"])
+        future_height = executor.submit(_get_height, cookie["token"])
+        future_bp = executor.submit(_get_bp, cookie["token"])
+        future_hdl = executor.submit(_get_hdl, cookie["token"])
+        future_ldl = executor.submit(_get_ldl, cookie["token"])
 
+        # Wait for all tasks to complete
+        concurrent.futures.wait(
+            [future_patient, future_height, future_bp, future_hdl, future_ldl]
+        )
+
+        # Get results from completed tasks
+        try:
+            first_name, last_name, dob = future_patient.result()
+            height = future_height.result()
+            systolic_bp, diastolic_bp = future_bp.result()
+            hdl = future_hdl.result()
+            ldl = future_ldl.result()
+
+            records = {
+                "Name": first_name + " " + last_name,
+                "Date of Birth": dob,
+                "Height": height,
+                "Systolic BP": systolic_bp,
+                "Diastolic BP": diastolic_bp,
+                "HDL": hdl,
+                "LDL": ldl,
+            }
+
+            return render_template("render_data.html", data=records)
+
+        except Exception as error:
+            raise ValueError(
+                f"Found the following error when rendering data: {error}"
+            ) from error
 
 
 def _get_patient_data(tokens):
@@ -160,7 +186,7 @@ def _get_patient_data(tokens):
     # Getting data in the way prescribed by OAuthLib package
     uri, headers, body = client.add_token(
         f"{BASE_URL}/Patient/{tokens['patient']}",
-        headers={"Accept": "application/fhir+json"}
+        headers={"Accept": "application/fhir+json"},
     )
 
     try:
@@ -201,7 +227,9 @@ def _get_patient_data(tokens):
             birth_date = "No birth date specified in FHIR data"
 
     except Exception as error:
-        raise ValueError(f"Found the following error pulling Patient FHIR resource: {error}") from error
+        raise ValueError(
+            f"Found the following error pulling Patient FHIR resource: {error}"
+        ) from error
 
     return given_name, family_name, birth_date
 
@@ -211,13 +239,13 @@ def _get_height(tokens):
     # Getting data in the way prescribed by OAuthLib package
     uri, headers, body = client.add_token(
         f"{BASE_URL}/Observation?patient={tokens['patient']}&category=vital-signs&code=8302-2",
-        headers={"Accept": "application/fhir+json"}
+        headers={"Accept": "application/fhir+json"},
     )
 
     try:
         # Getting data in the way prescribed by OAuthLib package
         observation = requests.get(uri, headers=headers, data=body, timeout=10)
-        
+
         try:
             observation = observation.json()
         except json.JSONDecodeError as error:
@@ -228,7 +256,7 @@ def _get_height(tokens):
                 or registered the app with the EHR vendor  
                 so that it has access to this resource in Read or Search mode.
                 """
-                ) from error
+            ) from error
 
         # Sometimes a resource is returned, but it doesn't have anything useful
         if observation["resourceType"] == "OperationOutcome":
@@ -242,12 +270,14 @@ def _get_height(tokens):
                     height = str(round(value, 1)) + " " + unit
                 except KeyError:
                     height = "No valid height data available. Either there isn't a value or a unit."
-            
+
             else:
                 height = "No height data available due to empty bundle"
 
     except Exception as error:
-        raise ValueError(f"Found the following error pulling Observation FHIR resource: {error}") from error
+        raise ValueError(
+            f"Found the following error pulling Observation FHIR resource: {error}"
+        ) from error
 
     return height
 
@@ -257,13 +287,13 @@ def _get_bp(tokens):
     # Getting data in the way prescribed by OAuthLib package
     uri, headers, body = client.add_token(
         f"{BASE_URL}/Observation?patient={tokens['patient']}&category=vital-signs&code=55284-4",
-        headers={"Accept": "application/fhir+json"}
+        headers={"Accept": "application/fhir+json"},
     )
 
     try:
         # Getting data in the way prescribed by OAuthLib package
         blood_pressure = requests.get(uri, headers=headers, data=body, timeout=10)
-        
+
         try:
             blood_pressure = blood_pressure.json()
         except json.JSONDecodeError as error:
@@ -274,35 +304,52 @@ def _get_bp(tokens):
                 or registered the app with the EHR vendor  
                 so that it has access to this resource in Read or Search mode.
                 """
-                ) from error
+            ) from error
 
         # Sometimes a resource is returned, but it doesn't have anything useful
         if blood_pressure["resourceType"] == "OperationOutcome":
-            sys_bp = "No systolic blood pressure available due to OperationOutcome error"
-            dias_bp = "No diastolic blood pressure available due to OperationOutcome error"
+            sys_bp = (
+                "No systolic blood pressure available due to OperationOutcome error"
+            )
+            dias_bp = (
+                "No diastolic blood pressure available due to OperationOutcome error"
+            )
         else:
-            if blood_pressure["resourceType"] == "Bundle" and blood_pressure["total"] > 0:
+            if (
+                blood_pressure["resourceType"] == "Bundle"
+                and blood_pressure["total"] > 0
+            ):
                 entry = blood_pressure["entry"][0]
                 try:
-                    sys_value = entry["resource"]["component"][0]["valueQuantity"]["value"]
-                    sys_unit = entry["resource"]["component"][0]["valueQuantity"]["unit"]
+                    sys_value = entry["resource"]["component"][0]["valueQuantity"][
+                        "value"
+                    ]
+                    sys_unit = entry["resource"]["component"][0]["valueQuantity"][
+                        "unit"
+                    ]
                     sys_bp = str(round(sys_value, 1)) + " " + sys_unit
                 except KeyError:
                     sys_bp = "No valid systolic blood pressure available. Either there wasn't a value or a unit."
-                    
+
                 try:
-                    dias_value = entry["resource"]["component"][1]["valueQuantity"]["value"]
-                    dias_unit = entry["resource"]["component"][1]["valueQuantity"]["unit"]
+                    dias_value = entry["resource"]["component"][1]["valueQuantity"][
+                        "value"
+                    ]
+                    dias_unit = entry["resource"]["component"][1]["valueQuantity"][
+                        "unit"
+                    ]
                     dias_bp = str(round(dias_value, 1)) + " " + dias_unit
                 except KeyError:
                     dias_bp = "No valid diastolic blood pressure available. Either there wasn't a value or a unit."
-            
+
             else:
                 sys_bp = "No systolic blood pressure available due to empty bundle"
                 dias_bp = "No diastolic blood pressure available due to empty bundle"
 
     except Exception as error:
-        raise ValueError(f"Found the following error pulling Observation FHIR resource: {error}") from error
+        raise ValueError(
+            f"Found the following error pulling Observation FHIR resource: {error}"
+        ) from error
 
     return sys_bp, dias_bp
 
@@ -312,13 +359,13 @@ def _get_hdl(tokens):
     # Getting data in the way prescribed by OAuthLib package
     uri, headers, body = client.add_token(
         f"{BASE_URL}/Observation?patient={tokens['patient']}&category=laboratory&code=2085-9",
-        headers={"Accept": "application/fhir+json"}
+        headers={"Accept": "application/fhir+json"},
     )
 
     try:
         # Getting data in the way prescribed by OAuthLib package
         hdl = requests.get(uri, headers=headers, data=body, timeout=10)
-        
+
         try:
             hdl = hdl.json()
         except json.JSONDecodeError as error:
@@ -329,7 +376,7 @@ def _get_hdl(tokens):
                 or registered the app with the EHR vendor  
                 so that it has access to this resource in Read or Search mode.
                 """
-                ) from error
+            ) from error
 
         # Sometimes a resource is returned, but it doesn't have anything useful
         if hdl["resourceType"] == "OperationOutcome":
@@ -342,13 +389,17 @@ def _get_hdl(tokens):
                     unit = entry["resource"]["valueQuantity"]["unit"]
                     good_chol = str(round(value, 1)) + " " + unit
                 except KeyError:
-                    good_chol = "No HDL available. Either there wasn't a value or a unit."
-            
+                    good_chol = (
+                        "No HDL available. Either there wasn't a value or a unit."
+                    )
+
             else:
                 good_chol = "No HDL available due to empty bundle"
 
     except Exception as error:
-        raise ValueError(f"Found the following error pulling Observation FHIR resource: {error}") from error
+        raise ValueError(
+            f"Found the following error pulling Observation FHIR resource: {error}"
+        ) from error
 
     return good_chol
 
@@ -358,13 +409,13 @@ def _get_ldl(tokens):
     # Getting data in the way prescribed by OAuthLib package
     uri, headers, body = client.add_token(
         f"{BASE_URL}/Observation?patient={tokens['patient']}&category=laboratory&code=18262-6",
-        headers={"Accept": "application/fhir+json"}
+        headers={"Accept": "application/fhir+json"},
     )
 
     try:
         # Getting data in the way prescribed by OAuthLib package
         ldl = requests.get(uri, headers=headers, data=body, timeout=10)
-        
+
         try:
             ldl = ldl.json()
         except json.JSONDecodeError as error:
@@ -375,13 +426,12 @@ def _get_ldl(tokens):
                 or registered the app with the EHR vendor  
                 so that it has access to this resource in Read or Search mode.
                 """
-                ) from error
+            ) from error
 
         # Sometimes a resource is returned, but it doesn't have anything useful
         if ldl["resourceType"] == "OperationOutcome":
             bad_chol = "No LDL available due to OperationOutcome error"
         else:
-            print(ldl)
             if ldl["resourceType"] == "Bundle" and ldl["total"] > 0:
                 entry = ldl["entry"][0]
                 try:
@@ -389,13 +439,17 @@ def _get_ldl(tokens):
                     unit = entry["resource"]["valueQuantity"]["unit"]
                     bad_chol = str(round(value, 1)) + " " + unit
                 except KeyError:
-                    bad_chol = "No LDL available. Either there wasn't a value or a unit."
-            
+                    bad_chol = (
+                        "No LDL available. Either there wasn't a value or a unit."
+                    )
+
             else:
                 bad_chol = "No LDL available due to empty bundle"
 
     except Exception as error:
-        raise ValueError(f"Found the following error pulling Observation FHIR resource: {error}") from error
+        raise ValueError(
+            f"Found the following error pulling Observation FHIR resource: {error}"
+        ) from error
 
     return bad_chol
 
