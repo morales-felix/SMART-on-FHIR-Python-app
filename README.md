@@ -39,7 +39,7 @@ Before launching this application in the SMART Health IT sandbox, do the followi
     - Launch Type: Provider EHR Launch  
     - FHIR Version: R4  
     - Simulated Error: None  
-    - Misc. Options: Do not check the "Simulate launch within the EHR UI  
+    - Misc. Options: Do not check the "Simulate launch within the EHR UI" option
     - For Patient(s), Provider(s), and Encounter, select any Patient and Provider combination. You don't need to select an Encounter. (You can skip this step if you want to select a Patient and Provider in the application itself. However, that would not be a true EHR launch, but more of a Standalone launch.)  
 
 4. This application currently runs on localhost. To run the application, navigate to the project directory in your machine's Command Prompt/PowerShell/Git Bash/etc., activate the corresponding virtual environment (see Installation above), and run the following command:  
