@@ -17,8 +17,6 @@ You need to have Python and pip installed on your system. You can download Pytho
 3. Create a fresh environment (Python >=3.7 but < 3.10 strongly recommended), and run the following:  
 `pip install -r requirements.txt`
 
-If you run into any issues with the installation, try deleting Windows-specific packages from the `requirements.txt` file.
-
 ## Usage
 
 Before launching this application in the SMART Health IT sandbox, do the following:  
