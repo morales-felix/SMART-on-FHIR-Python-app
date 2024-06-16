@@ -16,7 +16,7 @@ You can select any combination of Patient and Provider. No need to choose an Enc
   
 ### Types of Launches  
 
-- Standalone Launch: Click "Launch" without pre-selecting a Patient and Provider. You'll be prompted to choose them after launching.
-- EHR Launch: Select a Patient and Provider before clicking "Launch". The app starts with this "Context".
+- Standalone Launch: Click "Launch" without pre-selecting a Patient and Provider (i.e., without giving "context" to the app). You'll be prompted to choose them (i.e., give context) after launching.
+- EHR Launch: Select a Patient and Provider before clicking "Launch". Essentially, the app launches with "context" provided.
 
 Feel free to explore and see how the app works with different Patients and Providers!
