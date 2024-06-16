@@ -1,10 +1,12 @@
-# SMART on FHIR Python/Flask App
+# SMART on FHIR Python/Flask App  
+
+*If you simply want to run the app, and not have to do any technical setup (cloning the repository, installing dependencies, etc.), you can access the app [here](https://launch.smarthealthit.org/?launch_url=https%3A%2F%2Fsmart-on-fhir-python-app.onrender.com%2F&launch=WzAsIiIsIiIsIkFVVE8iLDAsMCwwLCJwYXRpZW50L1BhdGllbnQucnMgcGF0aWVudC9PYnNlcnZhdGlvbi5ycyBsYXVuY2ggb2ZmbGluZV9hY2Nlc3Mgb3BlbmlkIGZoaXJVc2VyIiwiaHR0cHM6Ly9zbWFydC1vbi1maGlyLXB5dGhvbi1hcHAub25yZW5kZXIuY29tL2ZoaXItYXBwLyIsImNsaWVudC1pZCIsIiIsIiIsIiIsIiIsMCwwXQ&tab=0&validation=1).*  
 
 ## Introduction
 
 This project is a Python application developed to display Patient and Observation resources. It is functionally the same as the app showcased in this [tutorial](https://engineering.cerner.com/smart-on-fhir-tutorial/). However, it is built in Python using the Flask framework, and as such, it is hosted locally. It uses OAuthLib to handle OAuth2.0/SMART on FHIR authentication with the EMR's FHIR server.
 
-It is designed to be launched on [SMART Health IT's sandbox](https://launch.smarthealthit.org/) with a Provider EHR Launch. To be able to launch this app on Cerner or Epic sandboxes, you would need to register this application with either of them to obtain a client ID, a base URL, and a list of allowed scopes, and then set up those parameters accordingly in the `ehr_launch.py` file.
+It is designed to be launched on [SMART Health IT's sandbox](https://launch.smarthealthit.org/) with a Provider EHR Launch. To be able to launch this app on Cerner or Epic sandboxes, you would need to register this application with either of them to obtain a client ID, a base URL, and a list of allowed scopes, and then set up those parameters accordingly in the `ehr_launch.py` file.  
 
 ### Prerequisites
 
