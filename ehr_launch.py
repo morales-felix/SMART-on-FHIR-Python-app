@@ -1,7 +1,6 @@
-# import os
+import os
 import json
 import uuid
-# import logging
 import concurrent.futures
 import requests
 from flask import Flask, request, render_template, redirect
@@ -454,13 +453,12 @@ def _get_ldl(tokens):
     return bad_chol
 
 
-# if __name__ == "__main__":
-#     # This creates a secret key (needed for session to work)
-#     app.secret_key = os.urandom(24)
+if __name__ == "__main__":
+    # This creates a secret key (needed for session to work)
+    app.secret_key = os.urandom(24)
 
-#     # This is to allow for endpoints to be http instead of https
-#     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+    # # This is to allow for endpoints to be http instead of https
+    # os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
-#     logging.basicConfig(level=logging.DEBUG)
-#     # app.run(ssl_context='adhoc', debug=True, host='0.0.0.0', port=4201)
-#     app.run(debug=True, host="0.0.0.0", port=4201)
+    app.run(ssl_context='adhoc', debug=True, host='0.0.0.0', port=4201)
+    # app.run(debug=True, host="0.0.0.0", port=4201)
