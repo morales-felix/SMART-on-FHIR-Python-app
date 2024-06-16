@@ -2,45 +2,16 @@
 
 ## Introduction
 
-This project is a Python application developed to display Patient and Observation resources. It is functionally the same as the app showcased in this [tutorial](https://engineering.cerner.com/smart-on-fhir-tutorial/). However, it is built in Python using the Flask framework, and as such, it is hosted locally. It uses OAuthLib to handle OAuth2.0/SMART on FHIR authentication with the EMR's FHIR server.
+This project is a Python application developed to display Patient and Observation resources. It is functionally the same as the app showcased in this [tutorial](https://engineering.cerner.com/smart-on-fhir-tutorial/). However, it is built in Python using the Flask framework, and it's being hosted on [Render](https://render.com/). It uses OAuthLib to handle OAuth2.0/SMART on FHIR authentication with the EMR's FHIR server.
 
 It is designed to be launched on [SMART Health IT's sandbox](https://launch.smarthealthit.org/) with a Provider EHR Launch. To be able to launch this app on Cerner or Epic sandboxes, you would need to register this application with either of them to obtain a client ID, a base URL, and a list of allowed scopes, and then set up those parameters accordingly in the `ehr_launch.py` file.
 
-### Prerequisites
-
-You need to have Python and pip installed on your system. You can download Python from the official website and pip is included in the Python installation. Alternatively, you can use the Anaconda distribution of Python which includes pip and other useful tools.
-
-### Installation
-
-1. Clone the repository to your local machine.
-2. Navigate to the project directory.
-3. Create a fresh environment (Python >=3.7 but < 3.10 strongly recommended), and run the following:  
-`pip install -r requirements.txt`
-
 ## Usage
 
-Before launching this application in the SMART Health IT sandbox, do the following:  
+To launch this application, [click here](https://launch.smarthealthit.org/?launch_url=https%3A%2F%2Fsmart-on-fhir-python-app.onrender.com%2F&launch=WzAsIiIsIiIsIkFVVE8iLDAsMCwwLCJwYXRpZW50L1BhdGllbnQucnMgcGF0aWVudC9PYnNlcnZhdGlvbi5ycyBsYXVuY2ggb2ZmbGluZV9hY2Nlc3Mgb3BlbmlkIGZoaXJVc2VyIiwiaHR0cHM6Ly9zbWFydC1vbi1maGlyLXB5dGhvbi1hcHAub25yZW5kZXIuY29tL2ZoaXItYXBwLyIsImNsaWVudC1pZCIsIiIsIiIsIiIsIiIsMCwwXQ&tab=0&validation=1)  
 
-1. Go to <https://launch.smarthealthit.org/>  
+From here, you can directly click "Launch", and the SMART Health IT sandbox will prompt you to select a Patient and a Provider. After selecting a Patient and Provider, the application will display the Patient's name and a list of Observations associated with that Patient. This way of executing the launch is called a Standalone launch (app is launched without knowing the "Context", aka, which Provider is executing the app, and which Patient is being viewed).
 
-2. Set up the following parameters in the tab named "Client Registration and Validation":  
+Another option is to select the Patient and Provider before clicking "Launch" in the SMART Health IT sandbox. The options right on top of the Launch button allow you to select a Patient and Provider. This way of launching the appplication is called a EHR Launch (app is launched with "Context").
 
-    - Client Identity Validation: Strict
-    - Client ID: `client-id`
-    - Allowed Scopes: `patient/Patient.rs patient/Observation.rs launch offline_access openid fhirUser`
-    - Allowed Redirect URIs: `http://localhost:4201/fhir-app/`
-    - App's Launch URL: `http://localhost:4201/`  
-    You can also find these parameters in the `ehr_launch.py` file. The parameters set in the `ehr_launch.py` file and in the sandbox MUST match, otherwise the application will not work.  
-
-3. Go to the "App Launch Options" tab in the SMART Health IT sandbox and select:
-
-    - Launch Type: Provider EHR Launch  
-    - FHIR Version: R4  
-    - Simulated Error: None  
-    - Misc. Options: Do not check the "Simulate launch within the EHR UI" option
-    - For Patient(s), Provider(s), and Encounter, select any Patient and Provider combination. You don't need to select an Encounter. (You can skip this step if you want to select a Patient and Provider in the application itself. However, that would not be a true EHR launch, but more of a Standalone launch.)  
-
-4. This application currently runs on localhost. To run the application, navigate to the project directory in your machine's Command Prompt/PowerShell/Git Bash/etc., activate the corresponding virtual environment (see Installation above), and run the following command:  
-`python ehr_launch.py`  
-
-5. Finally, go back to the SMART Health IT sandbox and click "Launch".
+In any case, you can select any Patient and Provider combination. You don't need to select an Encounter.
