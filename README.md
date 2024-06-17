@@ -17,7 +17,7 @@ Ensure you have Python and pip installed on your system. You can download Python
 1. Clone the repository to your local machine:  
 
 ```bash
-git clone https://github.com/your-username/SMART-on-FHIR-Python-app.git
+git clone https://github.com/morales-felix/SMART-on-FHIR-Python-app.git
 ```
 
 2. Navigate to the project directory:  
