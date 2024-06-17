@@ -1,8 +1,4 @@
-import os
 import json
-import uuid
-import logging
-import concurrent.futures
 import requests
 from flask import Flask, request, render_template, redirect
 from oauthlib.oauth2 import WebApplicationClient
@@ -75,6 +71,8 @@ def authorization():
     This method prepares an authorization request
     to the authorization server with the necessary parameters.
     """
+    
+    import uuid
 
     # Generate a state
     cookie["state"] = uuid.uuid4().hex
@@ -141,6 +139,8 @@ def render_data():
     """
     This method will render the data obtained from FHIR.
     """
+    
+    import concurrent.futures
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         # Submit API calls as tasks to the executor
@@ -455,6 +455,10 @@ def _get_ldl(tokens):
 
 
 if __name__ == "__main__":
+    
+    import os
+    import logging
+    
     # This creates a secret key (needed for session to work)
     app.secret_key = os.urandom(24)
 
