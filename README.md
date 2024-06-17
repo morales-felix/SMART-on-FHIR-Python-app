@@ -7,9 +7,10 @@ To start using the app, click [here](https://launch.smarthealthit.org/?launch_ur
 ### Steps to Use  
 
 1. Launch the App: Click the link above.
-2. Select Patient and Provider:
-   - If you click "Launch" right away, the sandbox will prompt you to select a Patient and a Provider.
-   - Alternatively, you can choose a Patient and Provider before clicking "Launch" by using the options above the Launch button.
+2a. If patient and provider ID is known:
+   - On the right-hand side you'll see options to select Patient and Provider: Select your patient and provider then click the blue launch button on the bottom of the screen
+2b. If patient and provider ID is not known:
+   - First click the blue launch button at the bottom of the screen and leave the patient and provider section blank. You'll be redirected to choose a provider and patient by name instead. 
 3. View Information: The app will display the selected Patient's name and a list of their Observations.
 
 You can select any combination of Patient and Provider. No need to choose an Encounter.  
